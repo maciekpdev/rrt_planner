@@ -15,7 +15,15 @@ bool CollisionDetector::inFreeSpace(const double * world_pos) {
     /**************************
      * Implement your code here
      **************************/
-
+    unsigned int mx, my;
+    
+    if (!costmap_->worldToMap(world_pos[0], world_pos[1], mx, my)) {
+        return false;
+    }
+    
+    unsigned char cost = costmap_->getCost(mx, my);
+    
+    return cost < nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 }
 
 bool CollisionDetector::obstacleBetween(const double * point_a, const double * point_b) {

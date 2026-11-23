@@ -1,5 +1,7 @@
 #include "rrt_planner/rrt_planner.h"
 
+#include <limits>
+
 namespace rrt_planner {
 
 RRTPlanner::RRTPlanner(nav2_costmap_2d::Costmap2DROS * costmap,
@@ -54,6 +56,17 @@ int RRTPlanner::getNearestNodeId(const double * point) {
      * Implement your code here
      **************************/
 
+    int closestNodeId = 0;
+    double minDist = std::numeric_limits<double>::max();
+    
+    for (const auto &n: nodes_) {
+        double distance = computeDistance(n.pos, point);
+        if (distance < minDist) {
+            minDist = distance;
+            closestNodeId = n.node_id;
+        }
+    }
+    return closestNodeId;
 }
 
 void RRTPlanner::createNewNode(const double * pos, int parent_node_id) {
@@ -64,6 +77,11 @@ void RRTPlanner::createNewNode(const double * pos, int parent_node_id) {
      * Implement your code here
      **************************/
 
+    new_node.pos[0] = pos[0];
+    new_node.pos[1] = pos[1];
+    new_node.node_id = nodes_.size();
+    new_node.parent_id = parent_node_id;
+
     nodes_.emplace_back(new_node);
 }
 
@@ -73,8 +91,8 @@ double * RRTPlanner::sampleRandomPoint() {
      * Implement your code here
      **************************/
 
-    rand_point_[0] = 0.0;  // TODO: implement
-    rand_point_[1] = 0.0;  // TODO: implement
+    rand_point_[0] = random_double_x.generate();
+    rand_point_[1] = random_double_y.generate();
 
     return rand_point_;
 }
@@ -85,9 +103,17 @@ double * RRTPlanner::extendTree(const double * point_nearest, const double * poi
      * Implement your code here
      **************************/
 
-    candidate_point_[0] = 0.0;  // TODO: implement
-    candidate_point_[1] = 0.0;  // TODO: implement
-
+    double distance = computeDistance(point_nearest, point_rand);
+    
+    if (distance <= params_.step) {
+        candidate_point_[0] = point_rand[0];
+        candidate_point_[1] = point_rand[1];
+    } else {
+        double scale = params_.step / distance;
+        candidate_point_[0] = point_nearest[0] + scale * (point_rand[0] - point_nearest[0]);
+        candidate_point_[1] = point_nearest[1] + scale * (point_rand[1] - point_nearest[1]);
+    }
+    
     return candidate_point_;
 }
 
